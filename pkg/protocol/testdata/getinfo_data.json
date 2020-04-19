@@ -1,0 +1,11 @@
+{
+	"punkbuster": "0",
+	"pure": "1",
+	"gametype": "0",
+	"sv_maxclients": "8",
+	"clients": "0",
+	"mapname": "q3dm15",
+	"hostname": "noname",
+	"protocol": "68",
+	"challenge": "xxx"
+}
