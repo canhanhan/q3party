@@ -15,7 +15,10 @@ var proxyCmd = &cobra.Command{
 }
 
 func init() {
+	proxyCmd.PersistentFlags().StringP("bind", "b", "127.0.0.1:27950", "Bind address")
 	proxyCmd.PersistentFlags().StringSlice("servers", nil, "Comma seperated list of master servers")
+	viper.BindPFlag("bind", proxyCmd.PersistentFlags().Lookup("bind"))
+	viper.BindPFlag("servers", proxyCmd.PersistentFlags().Lookup("servers"))
 }
 
 func runProxy(cmd *cobra.Command, args []string) {

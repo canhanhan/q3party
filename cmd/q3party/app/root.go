@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,18 +43,26 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
+		// Get working directory
+		wd, err := os.Getwd()
 		if err != nil {
 			er(err)
 		}
+		viper.AddConfigPath(wd)
 
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".q3masterproxy")
+		// Get executable directory
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			er(err)
+		}
+		viper.AddConfigPath(dir)
+		viper.SetConfigName("q3party")
 	}
 
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	} else {
+		println(err.Error())
 	}
 }
