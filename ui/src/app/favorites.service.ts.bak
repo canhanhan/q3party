@@ -1,0 +1,55 @@
+import { Injectable } from '@angular/core';
+import { Game, GameSearch, GameResult, filter } from './game.service';
+import { Observable, of } from 'rxjs';
+
+const storageKey = 'favorites';
+type serverList = Map<string, Game>;
+
+@Injectable({
+  providedIn: 'root'
+})
+export class FavoritesService {
+  constructor(private window: Window) { }
+
+  list(s: GameSearch): Observable<GameResult> {
+    const servers = [...this.get().values()];
+    return of(filter(servers, s));
+  }
+
+  add(game: Game) {
+    const servers = this.get();
+    if (!servers.has(game.server)) {
+      servers.set(game.server, game);
+    }
+
+    this.save(servers);
+  }
+
+  update(game: Game){
+    const servers = this.get();
+    if (!servers.has(game.server)) {
+      throw new Error('Server is not in favorites' + game.server);
+    }
+
+    servers.set(game.server, game);
+
+    this.save(servers);
+  }
+
+  remove(game: Game) {
+    const servers = this.get();
+    if (!servers.has(game.server)) {
+      servers.delete(game.server);
+    }
+
+    this.save(servers);
+  }
+
+  private get(): serverList {
+    return new Map<string, Game>(JSON.parse(this.window.localStorage.getItem(storageKey)));
+  }
+
+  private save(servers: serverList) {
+    this.window.localStorage.setItem(storageKey, JSON.stringify([...servers]));
+  }
+}

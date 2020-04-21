@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"strings"
 )
 
 func Unmarshal(data []byte) (interface{}, error) {
@@ -87,11 +88,8 @@ func unmarshalGetStatusResponse(data []byte) (*GetStatusResponse, error) {
 }
 
 func unmarshalChallengeResponse(tokens []string) (*GetChallengeResponse, error) {
-	if len(tokens) != 2 {
-		return nil, fmt.Errorf("Invalid challengeResponse")
-	}
-
-	return &GetChallengeResponse{Challenge: tokens[1]}, nil
+	challenge := strings.Join(tokens[1:], "")
+	return &GetChallengeResponse{Challenge: challenge}, nil
 }
 
 func parseStringMap(data []byte) map[string]string {

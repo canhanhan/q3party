@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/finarfin/q3party/internal/logging"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,6 +31,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file path")
 
 	rootCmd.AddCommand(proxyCmd)
+	rootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(dumpCmd)
 	//rootCmd.AddCommand(listCmd)
 	//rootCmd.AddCommand(staticCmd)
 }
@@ -65,4 +69,30 @@ func initConfig() {
 	} else {
 		println(err.Error())
 	}
+
+	initLogger()
+}
+
+func initLogger() {
+	log.SetOutput(os.Stdout)
+	if viper.IsSet("logfile") {
+		file, err := os.OpenFile(viper.GetString("logfile"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			er(err)
+		}
+
+		log.SetOutput(file)
+	}
+
+	log.SetLevel(log.InfoLevel)
+	if viper.IsSet("loglevel") {
+		level, err := log.ParseLevel(viper.GetString("loglevel"))
+		if err != nil {
+			er(err)
+		}
+
+		log.SetLevel(level)
+	}
+
+	log.AddHook(&logging.SplitHook{})
 }

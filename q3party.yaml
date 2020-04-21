@@ -1,2 +1,4 @@
+loglevel: trace
+logfile: q3party.log
 servers: 
   - 198.20.216.53:27950

@@ -1,0 +1,17 @@
+<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+  <a class="navbar-brand" href="#">Q3Party</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+    <ul class="navbar-nav mr-auto">
+      <app-nav-item title="Games" route="/games"></app-nav-item>
+      <app-nav-item title="Favorites" route="/favorites"></app-nav-item>
+    </ul>
+  </div>
+</nav>
+
+<main role="main">    
+  <router-outlet></router-outlet>
+</main>

@@ -12,10 +12,13 @@ type MasterClient struct {
 	UpstreamServers []string
 	servers         []string
 	ctx             context.Context
+	cancel          context.CancelFunc
 	masterConn      map[string]*protocol.Q3Conn
 }
 
 func (c *MasterClient) Close() error {
+	c.cancel()
+
 	for k := range c.masterConn {
 		err := c.masterConn[k].Close()
 		if err != nil {
@@ -27,22 +30,35 @@ func (c *MasterClient) Close() error {
 }
 
 func (c *MasterClient) Servers(req *protocol.GetServersRequest) (*protocol.GetServersResponse, error) {
+	err := c.refreshMasterServers()
+	if err != nil {
+		return nil, err
+	}
+
 	return &protocol.GetServersResponse{
 		Servers: c.servers,
 	}, nil
 }
 
 func (c *MasterClient) readLoop(conn *protocol.Q3Conn) error {
+	log.Trace("Starting read loop")
+	defer log.Trace("Exited read loop")
+
 	readCh := make(chan protocol.Q3Message)
+	go conn.Listen(readCh)
+
 	for {
 		select {
 		case <-c.ctx.Done():
-			log.Error(c.ctx.Err())
+			log.Errorf("Context done: %v", c.ctx.Err())
 			return c.ctx.Err()
 		default:
 		}
 
+		log.Trace("Waiting for a message")
 		msg := <-readCh
+		log.Trace("Received message")
+
 		switch v := msg.Msg.(type) {
 		case *protocol.GetServersResponse:
 			c.updateServerList(v)
@@ -88,9 +104,11 @@ func (c *MasterClient) refreshMasterServers() error {
 }
 
 func NewMasterClient(ctx context.Context, masters []string) (*MasterClient, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	c := MasterClient{
 		UpstreamServers: masters,
 		ctx:             ctx,
+		cancel:          cancel,
 		masterConn:      map[string]*protocol.Q3Conn{},
 		servers:         []string{},
 	}
@@ -103,6 +121,11 @@ func NewMasterClient(ctx context.Context, masters []string) (*MasterClient, erro
 
 		c.masterConn[m] = conn
 		go c.readLoop(conn)
+	}
+
+	err := c.refreshMasterServers()
+	if err != nil {
+		return nil, err
 	}
 
 	return &c, nil

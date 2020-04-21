@@ -22,7 +22,7 @@ func init() {
 }
 
 func runProxy(cmd *cobra.Command, args []string) {
-	log.SetLevel(log.TraceLevel)
+	log.Trace("Starting proxy command")
 
 	bind := viper.GetString("bind")
 	servers := viper.GetStringSlice("servers")
@@ -42,6 +42,5 @@ func runProxy(cmd *cobra.Command, args []string) {
 	}
 	defer ms.Close()
 
-	go ms.Listen()
 	<-cmd.Context().Done()
 }

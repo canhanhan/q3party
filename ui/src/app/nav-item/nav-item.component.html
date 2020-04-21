@@ -1,0 +1,5 @@
+<li class="nav-item" [ngClass]="{'active': (currentRoute() == route) }">
+    <a class="nav-link" routerLink="{{ route }}">
+        {{ title }} <span class="sr-only" *ngIf="currentRoute() == route">(current)</span>
+    </a>
+</li>

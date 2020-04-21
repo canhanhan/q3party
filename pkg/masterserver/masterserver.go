@@ -17,13 +17,15 @@ type MasterServer struct {
 	reader ServerReader
 	conn   *protocol.Q3Conn
 	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func (s *MasterServer) Close() error {
+	s.cancel()
 	return s.conn.Close()
 }
 
-func (s *MasterServer) Listen() error {
+func (s *MasterServer) listen() error {
 	readCh := make(chan protocol.Q3Message)
 	go s.conn.Listen(readCh)
 
@@ -65,6 +67,7 @@ func (s *MasterServer) sendGameServersResponse(addr *net.UDPAddr, req *protocol.
 }
 
 func NewMasterServer(ctx context.Context, bind string, reader ServerReader) (*MasterServer, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	conn, err := protocol.NewQ3Server(ctx, bind)
 	if err != nil {
 		return nil, err
@@ -74,7 +77,9 @@ func NewMasterServer(ctx context.Context, bind string, reader ServerReader) (*Ma
 		conn:   conn,
 		reader: reader,
 		ctx:    ctx,
+		cancel: cancel,
 	}
 
+	go s.listen()
 	return s, nil
 }
