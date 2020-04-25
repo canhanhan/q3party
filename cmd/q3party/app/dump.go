@@ -3,8 +3,9 @@ package app
 import (
 	"encoding/json"
 	"io/ioutil"
+	"time"
 
-	"github.com/finarfin/q3party/pkg/apiserver"
+	"github.com/finarfin/q3party/pkg/gamelister"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,7 +26,7 @@ func runDump(cmd *cobra.Command, args []string) {
 	log.Trace("Dump started")
 
 	servers := viper.GetStringSlice("servers")
-	repo, err := apiserver.NewQ3GameRepository(cmd.Context(), "68", servers)
+	repo, err := gamelister.NewGameLister(cmd.Context(), "68", servers)
 	if err != nil {
 		cmd.PrintErr(err)
 		return
@@ -39,27 +40,31 @@ func runDump(cmd *cobra.Command, args []string) {
 		default:
 		}
 
-		games, err := repo.List()
-		if err != nil {
-			cmd.PrintErr(err)
-			return
+		if repo.IsBusy() == true {
+			time.Sleep(1 * time.Second)
+			continue
 		}
 
-		if len(games) > 0 {
-			b, err := json.Marshal(games)
-			if err != nil {
-				cmd.PrintErr(err)
-				return
-			}
-
-			err = ioutil.WriteFile("C:\\temp\\q3.json", b, 666)
-			if err != nil {
-				cmd.PrintErr(err)
-				return
-			}
-
-			log.Info("Done")
-			return
-		}
+		break
 	}
+
+	games, err := repo.List()
+	if err != nil {
+		cmd.PrintErr(err)
+		return
+	}
+
+	b, err := json.Marshal(games)
+	if err != nil {
+		cmd.PrintErr(err)
+		return
+	}
+
+	err = ioutil.WriteFile("C:\\temp\\q3.json", b, 666)
+	if err != nil {
+		cmd.PrintErr(err)
+		return
+	}
+
+	log.Info("Done")
 }

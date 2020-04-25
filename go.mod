@@ -3,7 +3,7 @@ module github.com/finarfin/q3party
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.30.8 // indirect
+	github.com/aws/aws-sdk-go v1.30.8
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
 	github.com/gogap/env_strings v0.0.1 // indirect
 	github.com/google/martian v2.1.0+incompatible

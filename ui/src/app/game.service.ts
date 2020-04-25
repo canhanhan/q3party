@@ -29,9 +29,17 @@ export interface Game {
   game: string;
   map: string;
   name: string;
+
+  ping: number;
 }
 
 export interface GameSearch {
+  minPing?: number;
+  maxPing?: number;
+  minPlayers?: number;
+  maxPlayers?: number;
+  minBots?: number;
+  maxBots?: number;
   map?: string;
   game?: string;
   needPassword?: string;
@@ -47,6 +55,7 @@ export interface GameListItem {
   server: string;
   info: {[key: string]: any};
   status: {[key: string]: any};
+  ping: number;
 }
 
 export type facetValue = {[key: string]: (x: any) => boolean};
@@ -69,7 +78,8 @@ export class GameService {
           isPure: v.info.pure === '1',
           game: v.info.game,
           map: v.info.mapname,
-          name: v.info.hostname
+          name: v.info.hostname,
+          ping: v.ping
         };
       }), s);
     }));
@@ -78,6 +88,31 @@ export class GameService {
 
 export function filter(data: Game[], s: GameSearch): GameResult {
   const games = data.filter(x => {
+    if (s && s.minPing != null && x.ping < s.minPing) {
+      return false;
+    }
+
+    if (s && s.maxPing != null && x.ping > s.maxPing) {
+      return false;
+    }
+
+
+    if (s && s.minPlayers != null && x.humanPlayers < s.minPlayers) {
+      return false;
+    }
+
+    if (s && s.maxPlayers != null && x.humanPlayers > s.maxPlayers) {
+      return false;
+    }
+
+    if (s && s.minBots != null && (x.clients - x.humanPlayers) < s.minBots) {
+      return false;
+    }
+
+    if (s && s.maxBots != null && (x.clients - x.humanPlayers) > s.maxBots) {
+      return false;
+    }
+
     if (s && s.map != null && x.map !== s.map) {
       return false;
     }

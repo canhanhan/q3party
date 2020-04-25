@@ -1,14 +1,19 @@
 package apiserver
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/finarfin/q3party/pkg/gamelister"
+	log "github.com/sirupsen/logrus"
 )
 
 type MockGameRepository struct {
+	ctx  context.Context
+	file string
 	data []*gamelister.Game
 }
 
@@ -16,33 +21,59 @@ func (s *MockGameRepository) List() ([]*gamelister.Game, error) {
 	return s.data, nil
 }
 
-func NewMockGameRepository(file string) (*MockGameRepository, error) {
-	f, err := os.Open(file)
+func (s *MockGameRepository) Refresh() error {
+	f, err := os.Open(s.file)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer f.Close()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var data []map[string]string
+	var data []*gamelister.Game
 	err = json.Unmarshal(content, &data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	res := make([]*gamelister.Game, len(data))
-	for i, v := range data {
-		res[i] = &gamelister.Game{
-			Server: v["server"],
-			Info:   v,
+	s.data = data
+	return nil
+}
+
+func (r *MockGameRepository) refreshLoop() {
+	log.WithField("caller", "MockGameRepository.refreshLoop").Trace("Started")
+	defer log.WithField("caller", "MockGameRepository.refreshLoop").Trace("Exited")
+
+	for {
+		select {
+		case <-r.ctx.Done():
+			log.WithField("caller", "MockGameRepository.refreshLoop").Debug(r.ctx.Err())
+			return
+		default:
 		}
+
+		err := r.Refresh()
+		if err != nil {
+			log.WithField("caller", "MockGameRepository.refreshLoop").Error(err)
+			return
+		}
+
+		log.WithField("caller", "Q3GameRepository.refreshLoop").Debug("Sleeping")
+		time.Sleep(30 * time.Minute)
+	}
+}
+
+func NewMockGameRepository(ctx context.Context, file string) (*MockGameRepository, error) {
+	r := MockGameRepository{
+		ctx:  ctx,
+		file: file,
+		data: []*gamelister.Game{},
 	}
 
-	return &MockGameRepository{
-		data: res,
-	}, nil
+	go r.refreshLoop()
+
+	return &r, nil
 }

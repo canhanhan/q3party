@@ -25,7 +25,10 @@ export class ListGameService {
     return new Observable<GameResult>(observer => {
       this.gameService.list(s).subscribe(res => {
         this.listService.get(this.id).subscribe(list => {
-          const listGames = list.servers?.map(v => res.games.filter(g => g.server === v)[0]);
+          const listGames = list.servers?.map(v => { 
+            const r = res.games.filter(g => g.server === v);
+            return r.length < 1 ? null : r[0];
+          }).filter(g => g != null);
           observer.next(filter(listGames ?? [], s));
           observer.complete();
         });

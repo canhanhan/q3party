@@ -36,6 +36,7 @@ func (s *ApiServer) Listen() error {
 	router := mux.NewRouter().StrictSlash(true)
 	router.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("C:/Users/Can/Documents/Projects/q3master/ui/dist/q3party/"))))
 	router.HandleFunc("/games", s.listGames).Methods("GET")
+	router.HandleFunc("/games/refresh", s.refreshGames).Methods("POST")
 	router.HandleFunc("/lists/{id}", s.getList).Methods("GET")
 	router.HandleFunc("/lists", s.newList).Methods("POST")
 	router.HandleFunc("/lists/{id}/add", s.addToList).Methods("POST")
@@ -59,6 +60,20 @@ func (s *ApiServer) listGames(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeResponse(w, res)
+}
+
+func (s *ApiServer) refreshGames(w http.ResponseWriter, r *http.Request) {
+	log.Trace("Started refreshGames")
+	defer log.Trace("Exited refreshGames")
+
+	err := s.gameService.Refresh()
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeResponse(w, map[string]string{"result": "ok"})
 }
 
 func (s *ApiServer) getList(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,45 @@
+<ul class="nav flex-column" id="searchFacet">
+    <app-search-facet name="ping" title="Ping">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Min</label>
+                <input type="number" class="form-control" [value]="search.minPing" (input)="update('minPing', $event.target.value)" />
+            </div>
+            <div class="form-group col-md-6 text-right">
+                <label>Max</label>
+                <input type="number" class="form-control" [value]="search.maxPing" (input)="update('maxPing', $event.target.value)" />
+            </div>                
+        </div>
+    </app-search-facet>    
+    <app-search-facet name="players" title="Players">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Min</label>
+                <input type="number" class="form-control" [value]="search.minPlayers" (input)="update('minPlayers', $event.target.value)" />
+            </div>
+            <div class="form-group col-md-6 text-right">
+                <label>Max</label>
+                <input type="number" class="form-control" [value]="search.maxPlayers" (input)="update('maxPlayers', $event.target.value)" />
+            </div>                
+        </div>
+    </app-search-facet>
+    <app-search-facet name="bots" title="Bots">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Min</label>
+                <input type="number" class="form-control" [value]="search.minBots" (input)="update('minBots', $event.target.value)" />
+            </div>
+            <div class="form-group col-md-6 text-right">
+                <label>Max</label>
+                <input type="number" class="form-control" [value]="search.maxBots" (input)="update('maxBots', $event.target.value)" />
+            </div>                
+        </div>
+    </app-search-facet>    
+    <app-search-facet *ngFor="let facet of facets" [name]="facet.name" [title]="facet.title">
+        <ul class="nav flex-column nav-fill nav-pills">
+            <li class="nav-item" *ngFor="let value of facet.values">
+                <a class="nav-link" [routerLink]="" [ngClass]="{'active': search[facet.name]===value.name}" (click)="click(facet.name, value.name)">{{ value.name }} ({{ value.count }})</a>
+            </li>
+        </ul>
+    </app-search-facet>
+</ul>

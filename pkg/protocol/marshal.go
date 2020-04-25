@@ -12,28 +12,28 @@ const maxServers int = 99
 
 func Marshal(msg interface{}) ([][]byte, error) {
 	switch v := msg.(type) {
-	case GetServersRequest:
+	case *GetServersRequest:
 		return marshalGetServersRequest(v)
-	case GetServersResponse:
+	case *GetServersResponse:
 		return marshalGetServersResponse(v)
-	case GetChallengeRequest:
+	case *GetChallengeRequest:
 		return marshalGetChallengeRequest(v)
-	case GetChallengeResponse:
+	case *GetChallengeResponse:
 		return marshalGetChallengeResponse(v)
-	case GetInfoRequest:
+	case *GetInfoRequest:
 		return marshalGetInfoRequest(v)
 	// case GetInfoResponse:
 	// 	return marshalGetInfoResponse(v)
-	case GetStatusRequest:
+	case *GetStatusRequest:
 		return marshalGetStatusRequest(v)
 	// case GetStatusResponse:
 	// 	return marshalGetStatusResponse(v)
 	default:
-		return nil, fmt.Errorf("Unknown type: %s", v)
+		return nil, fmt.Errorf("Unknown type: %T", v)
 	}
 }
 
-func marshalGetServersRequest(req GetServersRequest) ([][]byte, error) {
+func marshalGetServersRequest(req *GetServersRequest) ([][]byte, error) {
 	flags := req.Protocol
 	if req.GameType != "" {
 		flags += " " + string(req.GameType)
@@ -53,7 +53,7 @@ func marshalGetServersRequest(req GetServersRequest) ([][]byte, error) {
 	return [][]byte{data}, nil
 }
 
-func marshalGetServersResponse(res GetServersResponse) ([][]byte, error) {
+func marshalGetServersResponse(res *GetServersResponse) ([][]byte, error) {
 	result := make([][]byte, 0)
 
 	for i := 0; i < len(res.Servers); i += maxServers {
@@ -94,22 +94,22 @@ func marshalGetServersResponse(res GetServersResponse) ([][]byte, error) {
 	return result, nil
 }
 
-func marshalGetChallengeRequest(req GetChallengeRequest) ([][]byte, error) {
+func marshalGetChallengeRequest(req *GetChallengeRequest) ([][]byte, error) {
 	data := []byte(fmt.Sprintf("%sgetchallenge", OOBHeader))
 	return [][]byte{data}, nil
 }
 
-func marshalGetChallengeResponse(res GetChallengeResponse) ([][]byte, error) {
+func marshalGetChallengeResponse(res *GetChallengeResponse) ([][]byte, error) {
 	data := []byte(fmt.Sprintf("%schallengeResponse %s", OOBHeader, res.Challenge))
 	return [][]byte{data}, nil
 }
 
-func marshalGetInfoRequest(req GetInfoRequest) ([][]byte, error) {
+func marshalGetInfoRequest(req *GetInfoRequest) ([][]byte, error) {
 	data := []byte(fmt.Sprintf("%sgetinfo %s", OOBHeader, req.Challenge))
 	return [][]byte{data}, nil
 }
 
-func marshalGetStatusRequest(req GetStatusRequest) ([][]byte, error) {
+func marshalGetStatusRequest(req *GetStatusRequest) ([][]byte, error) {
 	data := []byte(fmt.Sprintf("%sgetstatus %s", OOBHeader, req.Challenge))
 	return [][]byte{data}, nil
 }

@@ -12,35 +12,56 @@ type Q3GameRepository struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	lister *gamelister.GameLister
-	games  []*gamelister.Game
 }
 
 func (r *Q3GameRepository) Close() error {
+	log.WithField("caller", "Q3GameRepository.Close").Trace("Started")
+	defer log.WithField("caller", "Q3GameRepository.Close").Trace("Exited")
+
 	r.cancel()
 
 	return r.lister.Close()
 }
 
 func (r *Q3GameRepository) List() ([]*gamelister.Game, error) {
-	return r.games, nil
+	log.WithField("caller", "Q3GameRepository.List").Trace("Started")
+	defer log.WithField("caller", "Q3GameRepository.List").Trace("Exited")
+
+	return r.lister.List()
 }
 
-func (r *Q3GameRepository) refresh() {
+func (r *Q3GameRepository) Refresh() error {
+	log.WithField("caller", "Q3GameRepository.Refresh").Trace("Started")
+	defer log.WithField("caller", "Q3GameRepository.Refresh").Trace("Exited")
+
+	err := r.lister.Refresh()
+	if err != nil {
+		log.WithField("caller", "Q3GameRepository.Refresh").Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *Q3GameRepository) refreshLoop() {
+	log.WithField("caller", "Q3GameRepository.refresh").Trace("Started")
+	defer log.WithField("caller", "Q3GameRepository.refresh").Trace("Exited")
+
 	for {
 		select {
 		case <-r.ctx.Done():
-			log.Error(r.ctx.Err())
+			log.WithField("caller", "Q3GameRepository.refresh").Debug(r.ctx.Err())
 			return
 		default:
 		}
 
-		g, err := r.lister.List()
+		err := r.lister.Refresh()
 		if err != nil {
-			log.Error(err)
+			log.WithField("caller", "Q3GameRepository.refresh").Error(err)
 			return
 		}
 
-		r.games = g
+		log.WithField("caller", "Q3GameRepository.refresh").Debug("Sleeping")
 		time.Sleep(30 * time.Minute)
 	}
 }
@@ -56,9 +77,8 @@ func NewQ3GameRepository(ctx context.Context, protocol string, masters []string)
 		ctx:    ctx,
 		cancel: cancel,
 		lister: gl,
-		games:  []*gamelister.Game{},
 	}
 
-	go r.refresh()
+	go r.refreshLoop()
 	return &r, nil
 }

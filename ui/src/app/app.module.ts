@@ -11,6 +11,7 @@ import { SearchFacetComponent } from './search-facet/search-facet.component';
 import { MapNamePipe } from './map-name.pipe';
 import { GamesComponent } from './games/games.component';
 import { FavoritesComponent } from './favorites/favorites.component';
+import { SearchBarComponent } from './search-bar/search-bar.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import { FavoritesComponent } from './favorites/favorites.component';
     SearchFacetComponent,
     MapNamePipe,
     GamesComponent,
-    FavoritesComponent
+    FavoritesComponent,
+    SearchBarComponent
   ],
   imports: [
     BrowserModule,

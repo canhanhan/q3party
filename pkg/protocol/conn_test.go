@@ -76,7 +76,7 @@ func Test_Q3Conn_Client(t *testing.T) {
 
 	msgCh := make(chan Q3Message)
 	go c.Listen(msgCh)
-	err = c.Send(nil, GetInfoRequest{Challenge: "xxx"})
+	err = c.Send(nil, &GetInfoRequest{Challenge: "xxx"})
 	if err != nil {
 		t.Fatal(err)
 	}

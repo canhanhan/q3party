@@ -14,26 +14,32 @@ type Q3Message struct {
 }
 
 type Q3Conn struct {
+	Addr         *net.UDPAddr
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	BufferSize   int
 	ctx          context.Context
 	cancel       context.CancelFunc
 	conn         *net.UDPConn
+	cancelled    bool
 }
 
 func (s *Q3Conn) Close() error {
-	log.Trace("Started Q3Conn.Close")
-	defer log.Trace("Exited Q3Conn.Close")
+	fields := log.Fields{"caller": "Q3Conn.Close", "addr": s.Addr.String()}
+	log.WithFields(fields).Trace("Started")
+	defer log.WithFields(fields).Trace("Exited")
 
+	s.cancelled = true
 	s.cancel()
 	return s.conn.Close()
 }
 
 func (s *Q3Conn) Send(addr *net.UDPAddr, msg interface{}) error {
-	log.Trace("Started Q3Conn.Send")
-	defer log.Trace("Exited Q3Conn.Send")
+	fields := log.Fields{"caller": "Q3Conn.Send", "addr": s.Addr.String()}
+	log.WithFields(fields).Trace("Started")
+	defer log.WithFields(fields).Trace("Exited")
 
+	log.WithFields(fields).Tracef("Sending %T", msg)
 	data, err := Marshal(msg)
 	if err != nil {
 		return err
@@ -50,34 +56,39 @@ func (s *Q3Conn) Send(addr *net.UDPAddr, msg interface{}) error {
 }
 
 func (s *Q3Conn) Listen(readCh chan<- Q3Message) {
-	log.Trace("Started Q3Conn.Listen")
-	defer log.Trace("Exited Q3Conn.Listen")
+	fields := log.Fields{"caller": "Q3Conn.Listen", "addr": s.Addr.String()}
+	log.WithFields(fields).Trace("Started")
+	defer log.WithFields(fields).Trace("Exited")
 
 	for {
 		select {
 		case <-s.ctx.Done():
-			log.Error(s.ctx.Err())
+			log.WithFields(fields).Debug(s.ctx.Err())
 			return
 		default:
 		}
 
-		log.Trace("Waiting for data")
+		log.WithFields(fields).Trace("Waiting for data")
 		buffer := make([]byte, s.BufferSize)
 		s.conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
 		length, addr, err := s.conn.ReadFromUDP(buffer)
 		if err != nil {
+			if s.cancelled {
+				return
+			}
+
 			if neterr, ok := err.(net.Error); ok {
 				switch {
 				case neterr.Timeout():
-					log.Trace(err)
+					log.WithFields(fields).Trace(err)
 				case neterr.Temporary():
-					log.Warning(err)
+					log.WithFields(fields).Warning(err)
 				default:
-					log.Error(err)
+					log.WithFields(fields).Error(err)
 					return
 				}
 			} else {
-				log.Error(err)
+				log.WithFields(fields).Error(err)
 				return
 			}
 
@@ -87,17 +98,18 @@ func (s *Q3Conn) Listen(readCh chan<- Q3Message) {
 		data := buffer[0:length]
 		msg, err := Unmarshal(data)
 		if err != nil {
-			log.Error(err)
+			log.WithFields(fields).Error(err)
 			continue
 		}
 
+		log.WithFields(fields).Tracef("Received %T", msg)
 		readCh <- Q3Message{Addr: addr, Msg: msg}
 	}
 }
 
 func NewQ3Server(ctx context.Context, bind string) (*Q3Conn, error) {
-	log.Trace("Started Q3Conn.NewQ3Server")
-	defer log.Trace("Exited Q3Conn.NewQ3Server")
+	log.WithField("caller", "Q3Conn.NewQ3server").Trace("Started")
+	defer log.WithField("caller", "Q3Conn.NewQ3Server").Trace("Exited")
 
 	addr, err := net.ResolveUDPAddr("udp", bind)
 	if err != nil {
@@ -111,6 +123,7 @@ func NewQ3Server(ctx context.Context, bind string) (*Q3Conn, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	return &Q3Conn{
+		Addr:         addr,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 1 * time.Second,
 		BufferSize:   65507,
@@ -121,8 +134,8 @@ func NewQ3Server(ctx context.Context, bind string) (*Q3Conn, error) {
 }
 
 func NewQ3Client(ctx context.Context, bind string) (*Q3Conn, error) {
-	log.Trace("Started Q3Conn.NewQ3Client")
-	defer log.Trace("Exited Q3Conn.NewQ3Client")
+	log.WithField("caller", "Q3Conn.NewQ3Client").Trace("Started")
+	defer log.WithField("caller", "Q3Conn.NewQ3Client").Trace("Exited")
 
 	addr, err := net.ResolveUDPAddr("udp", bind)
 	if err != nil {
@@ -136,6 +149,7 @@ func NewQ3Client(ctx context.Context, bind string) (*Q3Conn, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	return &Q3Conn{
+		Addr:         addr,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 1 * time.Second,
 		BufferSize:   65507,

@@ -33,8 +33,6 @@ func init() {
 	rootCmd.AddCommand(proxyCmd)
 	rootCmd.AddCommand(apiCmd)
 	rootCmd.AddCommand(dumpCmd)
-	//rootCmd.AddCommand(listCmd)
-	//rootCmd.AddCommand(staticCmd)
 }
 
 func er(msg interface{}) {
@@ -75,6 +73,7 @@ func initConfig() {
 
 func initLogger() {
 	log.SetOutput(os.Stdout)
+	log.SetFormatter(&log.JSONFormatter{})
 	if viper.IsSet("logfile") {
 		file, err := os.OpenFile(viper.GetString("logfile"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {

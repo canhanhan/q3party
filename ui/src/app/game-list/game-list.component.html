@@ -1,49 +1,45 @@
 <div class="row">
-    <div class="col-3">
-        <app-search-facet [search]="search" [facets]="facets" (searchEvent)="search($event)"></app-search-facet>
+    <div class="col-12 col-md-4 col-lg-3">
+        <app-search-bar [search]="filters" [facets]="facets" (searchEvent)="search($event)"></app-search-bar>
     </div>
-    <div class="col-9">
-        <div id="gamelist">
-            <div class="card" *ngFor="let item of model?.games">
-                <div class="card-body">
-                    <div class="media">
-                        <div class="thumbnail mr-4">
-                            <img src="./assets/maps/{{ item.game.map | mapName }}.jpg" width="64" height="64" />
-                        </div>
-                        <div class="media-body overflow-hidden">
-                            <div class="d-flex align-items-center mb-1">
-                                <h6 class="text-truncate mb-0 mr-auto" [innerHTML]="item.game.name | q3color:true"></h6>
+    <div class="col-12 col-md-8 col-lg-9">
+        <ul id="gamelist" class="list-group list-group-lg list-group-flush-x">
+            <li class="list-group-item" *ngFor="let item of model?.games">                
+                <div class="row align-items-center">
+                    <div class="col-2 col-lg-1 mr-2 mr-lg-3">
+                        <img src="./assets/maps/{{ item.game.map | mapName }}.jpg" width="64" height="64" />
+                    </div>  
+                    <div class="col">
+                        <div class="d-flex font-weight-bold mb-1">
+                            <a class="text-body" title="{{ item.game.server }}">
+                                {{ item.game.name | q3color:true }}
                                 <span class="badge badge-danger" *ngIf="!item.game.isPure">Not Pure</span>
                                 <span class="badge badge-success" *ngIf="item.game.isPure">Pure</span>
                                 <span class="badge badge-danger" *ngIf="item.game.needPassword">Needs Password</span>
                                 <span class="badge badge-danger" *ngIf="item.game.game">Mod {{ item.game.game }}</span>
-                                <span class="badge badge-success" *ngIf="item.isFavorite">Favorite</span>
-                            </div>
-                            <div class="text-truncate">{{ item.game.map }}, {{ item.game.humanPlayers }} human,
-                                {{ item.game.clients - item.game.humanPlayers }} bots, max {{ item.game.maxClients }}</div>
+                                <span class="badge">{{ item.game.ping }}ms</span>
+                            </a>
+                            <span class="ml-auto">
+                                <a class="button" *ngIf="!item.isFavorite" [routerLink]=""  (click)="addFavorite(item.game)" title="Add to favorites">
+                                    <svg class="bi bi-heart" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 01.176-.17C12.72-3.042 23.333 4.867 8 15z" clip-rule="evenodd"/>
+                                    </svg>
+                                </a>
+        
+                                <a class="button" *ngIf="item.isFavorite" [routerLink]="" (click)="removeFavorite(item.game)" title="Remove from favorites">
+                                <svg class="bi bi-heart-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" clip-rule="evenodd"/>
+                                </svg>
+                                </a>
+                            </span>
                         </div>
-                    </div>
-                    <div class="dropdown card-options">
-                        <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
-                            <svg class="bi bi-three-dots-vertical" width="1em" height="1em" viewBox="0 0 16 16"
-                                fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd"
-                                    d="M9.5 13a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0-5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0-5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" [routerLink]="" *ngIf="!item.isFavorite" (click)="addFavorite(item.game)">Add to Favorites</a>
-                            <a class="dropdown-item" [routerLink]="" *ngIf="item.isFavorite" (click)="removeFavorite(item.game)">Remove from Favorites</a>
-                        </div>
+                        <p class="mb-7 font-size-sm text-muted">
+                            {{ item.game.map }}, {{ item.game.humanPlayers }} human,
+                            {{ item.game.clients - item.game.humanPlayers }} bots, max {{ item.game.maxClients }}
+                        </p>
                     </div>
                 </div>
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" [ngStyle]="{'width': item.occupancy + '%'}">
-                    </div>
-                </div>
-            </div>
-        </div>
+            </li>
+        </ul>
     </div>
 </div>

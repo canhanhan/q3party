@@ -1,24 +1,10 @@
-<div class="accordion" id="searchFacet">
-    <div class="card" *ngFor="let facet of facets">
-        <div class="card-header" id="{{ facet.name }}FacetHeading">
-            <h2 class="mb-0">
-                <button class="btn btn-link" type="button" data-toggle="collapse"
-                    [attr.data-target]="'#' + facet.name + 'FacetData'" aria-expanded="true"
-                    [attr.aria-controls]="facet.name + 'FacetData'">
-                    {{ facet.title }}
-                </button>
-            </h2>
-        </div>
-
-        <div id="{{ facet.name }}FacetData" class="collapse show" [attr.aria-labelledby]="facet.name + 'FacetHeading'"
-            data-parent="#searchFacet">
-            <div class="card-body">
-                <ul class="nav flex-column nav-fill nav-pills">
-                    <li class="nav-item" *ngFor="let value of facet.values">
-                        <a class="nav-link" [routerLink]="" [ngClass]="{'active': search[facet.name]===value.name}" (click)="click(facet.name, value.name)">{{ value.name }} ({{ value.count }})</a>
-                    </li>
-                </ul>
-            </div>
+<li class="nav-item">
+    <a class="nav-link dropdown-toggle font-size-lg text-reset border-bottom mb-6 collapsed" data-toggle="collapse" href="#{{ name }}FacetData" [attr.aria-controls]="name + 'FacetData'" aria-expanded="false">
+        {{ title }}
+    </a>
+    <div id="{{ name }}FacetData" class="collapse" [attr.aria-labelledby]="name + 'FacetHeading'" data-parent="#searchFacet">
+        <div class="card-body">
+            <ng-content></ng-content>
         </div>
     </div>
-</div>
+</li>

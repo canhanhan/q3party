@@ -14,9 +14,13 @@ type MasterClient struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	masterConn      map[string]*protocol.Q3Conn
+	ch              chan<- []string
 }
 
 func (c *MasterClient) Close() error {
+	log.WithField("caller", "MasterClient.Close").Trace("Started")
+	defer log.WithField("caller", "MasterClient.Close").Trace("Exited")
+
 	c.cancel()
 
 	for k := range c.masterConn {
@@ -29,70 +33,10 @@ func (c *MasterClient) Close() error {
 	return nil
 }
 
-func (c *MasterClient) Servers(req *protocol.GetServersRequest) (*protocol.GetServersResponse, error) {
-	err := c.refreshMasterServers()
-	if err != nil {
-		return nil, err
-	}
+func (c *MasterClient) Refresh(req *protocol.GetServersRequest) error {
+	log.WithField("caller", "MasterClient.Refresh").Trace("Started")
+	defer log.WithField("caller", "MasterClient.Refresh").Trace("Exited")
 
-	return &protocol.GetServersResponse{
-		Servers: c.servers,
-	}, nil
-}
-
-func (c *MasterClient) readLoop(conn *protocol.Q3Conn) error {
-	log.Trace("Starting read loop")
-	defer log.Trace("Exited read loop")
-
-	readCh := make(chan protocol.Q3Message)
-	go conn.Listen(readCh)
-
-	for {
-		select {
-		case <-c.ctx.Done():
-			log.Errorf("Context done: %v", c.ctx.Err())
-			return c.ctx.Err()
-		default:
-		}
-
-		log.Trace("Waiting for a message")
-		msg := <-readCh
-		log.Trace("Received message")
-
-		switch v := msg.Msg.(type) {
-		case *protocol.GetServersResponse:
-			c.updateServerList(v)
-		default:
-			err := fmt.Errorf("Unknown message type: %s", v)
-			log.Error(err)
-			continue
-		}
-	}
-
-	return nil
-}
-
-func (c *MasterClient) updateServerList(res *protocol.GetServersResponse) error {
-	servers := map[string]bool{}
-	for _, s := range c.servers {
-		servers[s] = false
-	}
-	for _, s := range res.Servers {
-		servers[s] = false
-	}
-
-	sl := make([]string, len(servers))
-	i := 0
-	for k := range servers {
-		sl[i] = k
-		i++
-	}
-	c.servers = sl
-	return nil
-}
-
-func (c *MasterClient) refreshMasterServers() error {
-	req := protocol.GetServersRequest{Protocol: "68"}
 	for _, m := range c.UpstreamServers {
 		err := c.masterConn[m].Send(nil, req)
 		if err != nil {
@@ -103,7 +47,39 @@ func (c *MasterClient) refreshMasterServers() error {
 	return nil
 }
 
-func NewMasterClient(ctx context.Context, masters []string) (*MasterClient, error) {
+func (c *MasterClient) readLoop(conn *protocol.Q3Conn) {
+	fields := log.Fields{"caller": "MasterClient.readLoop", "addr": conn.Addr.String()}
+	log.WithFields(fields).Trace("Started")
+	defer log.WithFields(fields).Trace("Exited")
+
+	readCh := make(chan protocol.Q3Message)
+	go conn.Listen(readCh)
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			log.WithFields(fields).Errorf("Context done: %v", c.ctx.Err())
+			return
+		default:
+		}
+
+		log.WithFields(fields).Trace("Waiting for a message")
+		msg := <-readCh
+		log.WithFields(fields).Trace("Received message")
+
+		switch v := msg.Msg.(type) {
+		case *protocol.GetServersResponse:
+			log.WithFields(fields).Debug("Received server response")
+			c.ch <- v.Servers
+		default:
+			err := fmt.Errorf("Unknown message type: %s", v)
+			log.WithFields(fields).Error(err)
+			continue
+		}
+	}
+}
+
+func NewMasterClient(ctx context.Context, masters []string, ch chan<- []string) (*MasterClient, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	c := MasterClient{
 		UpstreamServers: masters,
@@ -111,6 +87,7 @@ func NewMasterClient(ctx context.Context, masters []string) (*MasterClient, erro
 		cancel:          cancel,
 		masterConn:      map[string]*protocol.Q3Conn{},
 		servers:         []string{},
+		ch:              ch,
 	}
 
 	for _, m := range masters {
@@ -121,11 +98,6 @@ func NewMasterClient(ctx context.Context, masters []string) (*MasterClient, erro
 
 		c.masterConn[m] = conn
 		go c.readLoop(conn)
-	}
-
-	err := c.refreshMasterServers()
-	if err != nil {
-		return nil, err
 	}
 
 	return &c, nil

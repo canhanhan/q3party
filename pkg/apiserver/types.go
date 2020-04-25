@@ -4,6 +4,7 @@ import "github.com/finarfin/q3party/pkg/gamelister"
 
 type GameRepository interface {
 	List() ([]*gamelister.Game, error)
+	Refresh() error
 }
 
 type List struct {
