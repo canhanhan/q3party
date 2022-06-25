@@ -1,6 +1,8 @@
 q3party.yaml
 *.log
 
+.angular
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
