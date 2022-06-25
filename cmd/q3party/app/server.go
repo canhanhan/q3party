@@ -1,6 +1,9 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/finarfin/q3party/pkg/apiserver"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -14,18 +17,25 @@ var apiCmd = &cobra.Command{
 }
 
 func init() {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
 	apiCmd.PersistentFlags().StringSlice("servers", nil, "Comma seperated list of master servers")
 	apiCmd.PersistentFlags().Bool("mock", false, "Create mock server")
 	apiCmd.PersistentFlags().String("region", "", "AWS region")
 	apiCmd.PersistentFlags().String("access-id", "", "AWS access ID")
 	apiCmd.PersistentFlags().String("access-secret", "", "AWS access secret")
 	apiCmd.PersistentFlags().String("bucket", "", "AWS bucket")
+	apiCmd.PersistentFlags().String("ui-path", filepath.Join(workingDirectory, "ui", "dist", "q3party"), "Path to the UI files")
 	viper.BindPFlag("servers", apiCmd.PersistentFlags().Lookup("servers"))
 	viper.BindPFlag("mock", apiCmd.PersistentFlags().Lookup("mock"))
 	viper.BindPFlag("region", apiCmd.PersistentFlags().Lookup("region"))
 	viper.BindPFlag("accessId", apiCmd.PersistentFlags().Lookup("access-id"))
 	viper.BindPFlag("accessSecret", apiCmd.PersistentFlags().Lookup("access-secret"))
 	viper.BindPFlag("bucket", apiCmd.PersistentFlags().Lookup("bucket"))
+	viper.BindPFlag("uiPath", apiCmd.PersistentFlags().Lookup("ui-path"))
 }
 
 func runServer(cmd *cobra.Command, args []string) {
@@ -83,7 +93,8 @@ func runServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	s, err := apiserver.NewApiServer("127.0.0.1:8080", ls, gs)
+	uiPath := viper.GetString("uiPath")
+	s, err := apiserver.NewApiServer("127.0.0.1:8080", uiPath, ls, gs)
 	if err != nil {
 		cmd.PrintErr(err)
 		return

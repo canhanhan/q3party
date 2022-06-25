@@ -14,14 +14,16 @@ import (
 
 type ApiServer struct {
 	bind        string
+	uiPath      string
 	gameService *GameService
 	listService *ListService
 	router      *mux.Router
 }
 
-func NewApiServer(bind string, ls *ListService, gs *GameService) (*ApiServer, error) {
+func NewApiServer(bind string, uiPath string, ls *ListService, gs *GameService) (*ApiServer, error) {
 	return &ApiServer{
 		bind:        bind,
+		uiPath:      uiPath,
 		gameService: gs,
 		listService: ls,
 	}, nil
@@ -34,7 +36,7 @@ func (s *ApiServer) Listen() error {
 	}
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("C:/Users/Can/Documents/Projects/q3master/ui/dist/q3party/"))))
+	router.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(s.uiPath))))
 	router.HandleFunc("/games", s.listGames).Methods("GET")
 	router.HandleFunc("/games/refresh", s.refreshGames).Methods("POST")
 	router.HandleFunc("/lists/{id}", s.getList).Methods("GET")

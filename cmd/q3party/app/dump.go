@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/finarfin/q3party/pkg/gamelister"
@@ -19,7 +21,9 @@ var dumpCmd = &cobra.Command{
 
 func init() {
 	dumpCmd.PersistentFlags().StringSlice("servers", nil, "Comma seperated list of master servers")
+	dumpCmd.PersistentFlags().String("output", filepath.Join(os.TempDir(), "q3servers.json"), "Output path")
 	viper.BindPFlag("servers", dumpCmd.PersistentFlags().Lookup("servers"))
+	viper.BindPFlag("output", dumpCmd.PersistentFlags().Lookup("output"))
 }
 
 func runDump(cmd *cobra.Command, args []string) {
@@ -60,7 +64,8 @@ func runDump(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err = ioutil.WriteFile("C:\\temp\\q3.json", b, 666)
+	outputFile := viper.GetString("output")
+	err = ioutil.WriteFile(outputFile, b, 666)
 	if err != nil {
 		cmd.PrintErr(err)
 		return
